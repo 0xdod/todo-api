@@ -4,27 +4,15 @@ const { ObjectID } = require("mongodb");
 
 const { app } = require("../server");
 const { Todo } = require("../models/todo");
+const {
+  fakeTodos,
+  populateTodos,
+  users,
+  populateUsers,
+} = require("./seed/seed");
 
-const fakeTodos = [
-  {
-    _id: new ObjectID(),
-    text: "Fake todo 1",
-  },
-  {
-    _id: new ObjectID(),
-    text: "Fake todo 2",
-    isCompleted: true,
-    completedAt: 1000,
-  },
-];
-
-beforeEach((done) => {
-  Todo.deleteMany({})
-    .then(() => {
-      return Todo.insertMany(fakeTodos);
-    })
-    .then(() => done());
-});
+beforeEach(populateTodos);
+beforeEach(populateUsers);
 
 describe("POST /todos", () => {
   it("should create new todo", (done) => {
@@ -177,5 +165,29 @@ describe("PATCH /todos/:id", () => {
           })
           .catch((err) => done(err));
       });
+  });
+});
+
+describe("GET /users/me", () => {
+  it("should return user if authenticated", (done) => {
+    request(app)
+      .get("/users/me")
+      .set("x-auth", users[0].tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.user._id).toBe(users[0]._id.toHexString());
+        expect(res.body.user.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+
+  it("should return 401 if not authenticated", (done) => {
+    request(app)
+      .get("/users/me")
+      .expect(401)
+      .expect((res) => {
+        expect(res.body.user).toBeFalsy();
+      })
+      .end(done);
   });
 });
