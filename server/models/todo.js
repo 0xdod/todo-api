@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 let Schema = mongoose.Schema;
 
-let todo = new Schema({
+let todoSchema = new Schema({
   text: {
     type: String,
     required: true,
@@ -18,6 +18,6 @@ let todo = new Schema({
   },
 });
 
-let Todo = mongoose.model("Todo", todo);
+let Todo = mongoose.model("Todo", todoSchema);
 
 module.exports = { Todo };

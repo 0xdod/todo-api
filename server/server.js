@@ -7,6 +7,7 @@ const _ = require("lodash");
 const { mongoose } = require("./db/mongoose");
 const { User } = require("./models/user");
 const { Todo } = require("./models/todo");
+const { authenticate } = require("./middleware/authenticate");
 
 let app = express();
 let port = process.env.PORT;
@@ -34,7 +35,7 @@ app.get("/todos", (req, res) => {
     .catch((err) => res.send(err));
 });
 
-app.get("/todos/:id", (req, res) => {
+app.get("/todos/:id", authenticate, (req, res) => {
   let id = req.params.id;
   if (!ObjectID.isValid(id)) {
     return res.status(404).send("Invalid ID");
@@ -90,11 +91,13 @@ app.delete("/todos/:id", (req, res) => {
 //Users section
 app.post("/users", (req, res) => {
   let body = _.pick(req.body, ["email", "password"]);
+  body.email = body.email.toLowerCase();
   let user = new User(body);
 
   user
     .save()
-    .then((doc) => res.send(doc))
+    .then(() => user.generateAuthToken())
+    .then((token) => res.header("x-auth", token).send(user))
     .catch((err) => res.status(400).send(err));
 });
 
