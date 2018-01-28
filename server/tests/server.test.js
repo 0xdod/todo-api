@@ -4,6 +4,7 @@ const { ObjectID } = require("mongodb");
 
 const { app } = require("../server");
 const { Todo } = require("../models/todo");
+const { User } = require("../models/user");
 const {
   fakeTodos,
   populateTodos,
@@ -189,5 +190,115 @@ describe("GET /users/me", () => {
         expect(res.body.user).toBeFalsy();
       })
       .end(done);
+  });
+});
+
+describe("POST /users", () => {
+  it("should create a valid user", (done) => {
+    let email = "example@example.com";
+    let password = "Hellobaby!";
+
+    request(app)
+      .post("/users")
+      .send({ email, password })
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers["x-auth"]).toBeTruthy();
+        expect(res.body.email).toBe(email);
+        expect(res.body._id).toBeTruthy();
+      })
+      .end(done);
+  });
+  it("should not create a user for invalid user details", (done) => {
+    request(app)
+      .post("/users")
+      .send({ email: "hello baby", password: "123" })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body).toEqual({});
+      })
+      .end(done);
+  });
+  it("should not create a user if email already exists", (done) => {
+    request(app)
+      .post("/users")
+      .send({ email: users[0].email, password: "baybeeee" })
+      .expect(400)
+      .end(done);
+  });
+});
+
+describe("POST /users/login", () => {
+  it("should login user and return auth token", (done) => {
+    request(app)
+      .post("/users/login")
+      .send({
+        email: users[1].email,
+        password: users[1].password,
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers["x-auth"]).toBeTruthy();
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(users[1]._id)
+          .then((user) => {
+            expect(user.tokens[0]).toMatchObject({
+              access: "auth",
+              token: res.headers["x-auth"],
+            });
+            done();
+          })
+          .catch((e) => done(e));
+      });
+  });
+
+  it("should reject invalid login", (done) => {
+    request(app)
+      .post("/users/login")
+      .send({
+        email: users[1].email,
+        password: users[1].password + "1",
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.headers["x-auth"]).toBeFalsy();
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        User.findById(users[1]._id)
+          .then((user) => {
+            expect(user.tokens.length).toBe(0);
+            done();
+          })
+          .catch((e) => done(e));
+      });
+  });
+});
+
+describe("DELETE /users/me/token", () => {
+  it("should remove token object from tokens array", (done) => {
+    request(app)
+      .delete("/users/me/token")
+      .set("x-auth", users[0].tokens[0].token)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        User.findById(users[0]._id)
+          .then((user) => {
+            expect(user.tokens).toHaveLength(0);
+            done();
+          })
+          .catch((e) => done(e));
+      });
   });
 });

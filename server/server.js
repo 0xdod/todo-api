@@ -98,11 +98,32 @@ app.post("/users", (req, res) => {
     .save()
     .then(() => user.generateAuthToken())
     .then((token) => res.header("x-auth", token).send(user))
-    .catch((err) => res.status(400).send(err));
+    .catch((err) => res.status(400).send());
+});
+
+app.post("/users/login", (req, res) => {
+  let body = _.pick(req.body, ["email", "password"]);
+  body.email = body.email.toLowerCase();
+  User.findByCredentials(body.email, body.password)
+    .then((user) => {
+      return user
+        .generateAuthToken()
+        .then((token) => res.header("x-auth", token).send(user));
+    })
+    .catch((e) => res.status(400).send(e));
 });
 
 app.get("/users/me", authenticate, (req, res) => {
   res.send({ user: req.user });
+});
+
+app.delete("/users/me/token", authenticate, (req, res) => {
+  req.user
+    .removeToken(req.token)
+    .then(() => {
+      res.status(200).send();
+    })
+    .catch((e) => res.status(400).send);
 });
 
 app.listen(port, () => console.log(`App running on port ${port}`));
