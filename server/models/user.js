@@ -35,7 +35,7 @@ let userSchema = new Schema({
   ],
 });
 
-userSchema.methods.toJSON() = function () {
+userSchema.methods.toJSON = function () {
   const self = this;
   const selfObject = self.toObject();
 
@@ -56,7 +56,6 @@ userSchema.methods.generateAuthToken = function () {
 userSchema.statics.findByToken = function (token) {
   const User = this;
   let decoded = null;
-
   try {
     decoded = jwt.verify(token, "abcde");
   } catch (e) {
@@ -65,7 +64,7 @@ userSchema.statics.findByToken = function (token) {
   return User.findOne({
     _id: decoded._id,
     "tokens.token": token,
-    "token.access": "auth",
+    "tokens.access": "auth",
   });
 };
 
