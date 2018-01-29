@@ -16,6 +16,10 @@ let todoSchema = new Schema({
     type: Number,
     default: null,
   },
+  _creator: {
+    type: Schema.Types.ObjectId,
+    required: true,
+  },
 });
 
 let Todo = mongoose.model("Todo", todoSchema);

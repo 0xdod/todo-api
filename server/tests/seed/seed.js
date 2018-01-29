@@ -4,29 +4,9 @@ const jwt = require("jsonwebtoken");
 const { Todo } = require("../../models/todo");
 const { User } = require("../../models/user");
 
-const fakeTodos = [
-  {
-    _id: new ObjectID(),
-    text: "Fake todo 1",
-  },
-  {
-    _id: new ObjectID(),
-    text: "Fake todo 2",
-    isCompleted: true,
-    completedAt: 1000,
-  },
-];
-
-function populateTodos(done) {
-  Todo.deleteMany({})
-    .then(() => {
-      return Todo.insertMany(fakeTodos);
-    })
-    .then(() => done());
-}
-
 const userOneId = new ObjectID();
 const userTwoId = new ObjectID();
+
 const users = [
   {
     _id: userOneId,
@@ -43,8 +23,37 @@ const users = [
     _id: userTwoId,
     email: "jen@example.com",
     password: "userTwoPass",
+    tokens: [
+      {
+        access: "auth",
+        token: jwt.sign({ _id: userTwoId, access: "auth" }, "abcde").toString(),
+      },
+    ],
   },
 ];
+
+const fakeTodos = [
+  {
+    _id: new ObjectID(),
+    text: "Fake todo 1",
+    _creator: userOneId,
+  },
+  {
+    _id: new ObjectID(),
+    text: "Fake todo 2",
+    isCompleted: true,
+    completedAt: 1000,
+    _creator: userTwoId,
+  },
+];
+
+function populateTodos(done) {
+  Todo.deleteMany({})
+    .then(() => {
+      return Todo.insertMany(fakeTodos);
+    })
+    .then(() => done());
+}
 
 const populateUsers = (done) => {
   User.deleteMany({})
