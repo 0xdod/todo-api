@@ -61,7 +61,7 @@ describe("POST /todos", () => {
   });
 });
 
-describe("GET /todo", () => {
+describe("GET /todos", () => {
   it("should get all todos", (done) => {
     request(app)
       .get("/todos")
@@ -73,17 +73,27 @@ describe("GET /todo", () => {
   });
 });
 
-describe("GET /todo/:id", function () {
+describe("GET /todos/:id", function () {
   let id = fakeTodos[0]._id.toHexString();
   let { text } = fakeTodos[0];
-
   it("should return a single todo", (done) => {
     request(app)
-      .get(`todo${id}`)
+      .get(`/todos/${id}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body.todos.text).toBe(text);
+        expect(res.body.todo.text).toBe(text);
       })
       .end(done);
+  });
+
+  it("should return 404 if todo not found", (done) => {
+    request(app)
+      .get(`/todos/${new ObjectID().toHexString()}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it("should return 404 for invalid ID", (done) => {
+    request(app).get("/todos/1234567").expect(404).end(done);
   });
 });
