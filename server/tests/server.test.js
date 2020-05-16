@@ -97,3 +97,28 @@ describe("GET /todos/:id", function () {
     request(app).get("/todos/1234567").expect(404).end(done);
   });
 });
+
+describe("DELETE /todos/:id", function () {
+  let id = fakeTodos[0]._id.toHexString();
+  let { text } = fakeTodos[0];
+  it("should delete a single todo", (done) => {
+    request(app)
+      .delete(`/todos/${id}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.text).toBe(text);
+      })
+      .end(done);
+  });
+
+  it("should return 404 if there's no todo to delete", (done) => {
+    request(app)
+      .delete(`/todos/${new ObjectID().toHexString()}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it("should return 404 for invalid ID", (done) => {
+    request(app).delete("/todos/1234567").expect(404).end(done);
+  });
+});
