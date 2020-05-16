@@ -43,7 +43,6 @@ describe("POST /todos", () => {
           .catch((err) => done(err));
       });
   });
-
   it("should not create new todo on bad request", (done) => {
     request(app)
       .post("/todos")
@@ -85,39 +84,43 @@ describe("GET /todos/:id", function () {
       })
       .end(done);
   });
-
   it("should return 404 if todo not found", (done) => {
     request(app)
       .get(`/todos/${new ObjectID().toHexString()}`)
       .expect(404)
       .end(done);
   });
-
   it("should return 404 for invalid ID", (done) => {
     request(app).get("/todos/1234567").expect(404).end(done);
   });
 });
 
 describe("DELETE /todos/:id", function () {
-  let id = fakeTodos[0]._id.toHexString();
+  let _id = fakeTodos[0]._id.toHexString();
   let { text } = fakeTodos[0];
-  it("should delete a single todo", (done) => {
+  it("should remove a single todo", (done) => {
     request(app)
-      .delete(`/todos/${id}`)
+      .delete(`/todos/${_id}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body.text).toBe(text);
+        expect(res.body.todo._id).toBe(_id);
       })
-      .end(done);
+      .end((err, res) => {
+        if (err) return done(err);
+        Todo.find({ _id })
+          .then((todos) => {
+            expect(todos.length).toBe(0);
+            done();
+          })
+          .catch((err) => done(err));
+      });
   });
-
   it("should return 404 if there's no todo to delete", (done) => {
     request(app)
       .delete(`/todos/${new ObjectID().toHexString()}`)
       .expect(404)
       .end(done);
   });
-
   it("should return 404 for invalid ID", (done) => {
     request(app).delete("/todos/1234567").expect(404).end(done);
   });
