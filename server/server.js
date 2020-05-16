@@ -7,6 +7,7 @@ const { User } = require("./models/user");
 const { Todo } = require("./models/todo");
 
 let app = express();
+let port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
@@ -51,6 +52,30 @@ app.get("/todos/:id", (req, res) => {
     .catch((e) => res.status(404).send(e.message));
 });
 
+app.patch("/todos/:id", (req, res) => {
+  let id = req.params.id;
+  let { text, isCompleted } = req.body;
+  const body = { text, isCompleted };
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send("Invalid ID");
+  }
+  if (typeof body.isCompleted === "boolean" && body.isCompleted) {
+    body.completedAt = new Date().getTime();
+  } else {
+    body.completedAt = null;
+    body.isCompleted = false;
+  }
+
+  Todo.findByIdAndUpdate(id, { $set: body }, { new: true })
+    .then((todo) => {
+      if (!todo) {
+        return res.status(404).send();
+      }
+      res.send({ todo });
+    })
+    .catch((e) => res.status(404).send());
+});
+
 app.delete("/todos/:id", (req, res) => {
   let id = req.params.id;
   if (!ObjectID.isValid(id)) {
@@ -66,6 +91,6 @@ app.delete("/todos/:id", (req, res) => {
     .catch((e) => res.status(400).send(e.message));
 });
 
-app.listen(3000, () => console.log("App running on port 3000"));
+app.listen(port, () => console.log(`App running on port ${port}`));
 
 module.exports = { app };
