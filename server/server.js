@@ -2,6 +2,7 @@ require("./config");
 const express = require("express");
 const bodyParser = require("body-parser");
 const { ObjectID } = require("mongodb");
+const _ = require("lodash");
 
 const { mongoose } = require("./db/mongoose");
 const { User } = require("./models/user");
@@ -12,20 +13,15 @@ let port = process.env.PORT;
 
 app.use(bodyParser.json());
 
+//Todos section
 app.post("/todos", (req, res) => {
   let todo = new Todo({
     text: req.body.text,
   });
 
   todo.save().then(
-    (doc) => {
-      console.log("New todo saved");
-      res.send(doc);
-    },
-    (err) => {
-      console.log("Error saving new todo");
-      res.status(400).send(err);
-    }
+    (doc) => res.send(doc),
+    (err) => res.status(400).send(err)
   );
 });
 
@@ -55,12 +51,11 @@ app.get("/todos/:id", (req, res) => {
 
 app.patch("/todos/:id", (req, res) => {
   let id = req.params.id;
-  let { text, isCompleted } = req.body;
-  const body = { text, isCompleted };
+  let body = _.pick(req.body, ["text", "isCompleted"]);
   if (!ObjectID.isValid(id)) {
     return res.status(404).send("Invalid ID");
   }
-  if (typeof body.isCompleted === "boolean" && body.isCompleted) {
+  if (_.isBoolean(body.isCompleted) && body.isCompleted) {
     body.completedAt = new Date().getTime();
   } else {
     body.completedAt = null;
@@ -90,6 +85,17 @@ app.delete("/todos/:id", (req, res) => {
       res.send({ todo });
     })
     .catch((e) => res.status(400).send(e.message));
+});
+
+//Users section
+app.post("/users", (req, res) => {
+  let body = _.pick(req.body, ["email", "password"]);
+  let user = new User(body);
+
+  user
+    .save()
+    .then((doc) => res.send(doc))
+    .catch((err) => res.status(400).send(err));
 });
 
 app.listen(port, () => console.log(`App running on port ${port}`));
